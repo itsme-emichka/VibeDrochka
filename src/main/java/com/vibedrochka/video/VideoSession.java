@@ -49,6 +49,7 @@ public class VideoSession {
                 
                 plugin.getLogger().info("Creating map for position [" + x + "," + y + "] at location " + 
                                        frame.getLocation().getBlockX() + "," + frame.getLocation().getBlockY() + "," + frame.getLocation().getBlockZ());
+                plugin.getLogger().info("This frame will render image portion (" + (x * 128) + "," + (y * 128) + ") to (" + ((x + 1) * 128) + "," + ((y + 1) * 128) + ")");
                 
                 // Create a new map view
                 MapView mapView = Bukkit.createMap(frame.getWorld());

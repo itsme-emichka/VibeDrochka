@@ -68,6 +68,7 @@ public class VideoRenderer extends MapRenderer {
                 if (System.currentTimeMillis() % 5000 < 50) { // Log every ~5 seconds
                     plugin.getLogger().info("Rendering grid[col=" + gridX + ",row=" + gridY + "] from source (" + sourceX + "," + sourceY + ") of " + 
                                            currentFrame.getWidth() + "x" + currentFrame.getHeight() + " image");
+                    plugin.getLogger().info("Expected: grid[0,0]=top-left image, grid[1,0]=next right, etc.");
                 }
                 
                 // Extract the portion of the frame for this map position
