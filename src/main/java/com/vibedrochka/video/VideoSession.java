@@ -44,6 +44,8 @@ public class VideoSession {
         
         for (int y = 0; y < frameGrid.size(); y++) {
             List<ItemFrame> row = frameGrid.get(y);
+            plugin.getLogger().info("Processing row " + y + " with " + row.size() + " frames");
+            
             for (int x = 0; x < row.size(); x++) {
                 ItemFrame frame = row.get(x);
                 
@@ -60,6 +62,8 @@ public class VideoSession {
                     plugin, x, y, videoData.getWidth(), videoData.getHeight()
                 );
                 renderers[y][x] = renderer;
+                
+                plugin.getLogger().info("Created renderer for grid[" + x + "," + y + "] - this will render image portion (" + (x * 128) + "," + (y * 128) + ")");
                 
                 // Clear existing renderers and add our custom one
                 mapView.getRenderers().clear();
