@@ -3,6 +3,7 @@ package com.vibedrochka.video;
 import com.vibedrochka.VibeDrochkaPlugin;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.ItemFrame;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.map.MapView;
 import org.bukkit.scheduler.BukkitTask;
@@ -60,7 +61,11 @@ public class VideoSession {
                 
                 // Create map item and place it in the frame
                 ItemStack mapItem = new ItemStack(org.bukkit.Material.FILLED_MAP);
-                mapItem.setDurability((short) mapView.getId());
+                org.bukkit.inventory.meta.MapMeta mapMeta = (org.bukkit.inventory.meta.MapMeta) mapItem.getItemMeta();
+                if (mapMeta != null) {
+                    mapMeta.setMapView(mapView);
+                    mapItem.setItemMeta(mapMeta);
+                }
                 frame.setItem(mapItem);
             }
         }
@@ -96,8 +101,17 @@ public class VideoSession {
                     }
                 }
                 
-                // Force map update for all online players
-                updateMapsForPlayers();
+                // Force map updates by marking them as dirty
+                for (int y = 0; y < mapViews.length; y++) {
+                    for (int x = 0; x < mapViews[y].length; x++) {
+                        if (mapViews[y][x] != null) {
+                            // Force the map to update for all players
+                            for (Player onlinePlayer : plugin.getServer().getOnlinePlayers()) {
+                                onlinePlayer.sendMap(mapViews[y][x]);
+                            }
+                        }
+                    }
+                }
                 
                 // Move to next frame
                 currentFrameIndex++;
@@ -110,6 +124,13 @@ public class VideoSession {
         
         plugin.getLogger().info("Started video playback for: " + videoData.getName() + 
                                " (Framerate: " + videoData.getFramerate() + " FPS, Delay: " + delayTicks + " ticks)");
+        plugin.getLogger().info("Video has " + frames.size() + " frames, grid size: " + videoData.getWidth() + "x" + videoData.getHeight());
+        
+        // Log first frame to verify it's working
+        if (!frames.isEmpty()) {
+            BufferedImage firstFrame = frames.get(0);
+            plugin.getLogger().info("First frame size: " + firstFrame.getWidth() + "x" + firstFrame.getHeight());
+        }
     }
     
     private void updateMapsForPlayers() {

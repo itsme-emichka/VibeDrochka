@@ -23,10 +23,9 @@ public class VideoRenderer extends MapRenderer {
     
     @Override
     public void render(MapView map, MapCanvas canvas, Player player) {
-        if (currentFrame != null && needsUpdate) {
+        if (currentFrame != null) {
             // Draw the current frame to the map canvas
             canvas.drawImage(0, 0, currentFrame);
-            needsUpdate = false;
         }
     }
     
@@ -56,7 +55,7 @@ public class VideoRenderer extends MapRenderer {
         
         @Override
         public void render(MapView map, MapCanvas canvas, Player player) {
-            if (currentFrame != null && needsUpdate) {
+            if (currentFrame != null) {
                 // Calculate which part of the full image this map should display
                 int mapSize = 128; // Maps are 128x128 pixels
                 int sourceX = gridX * mapSize;
@@ -68,8 +67,6 @@ public class VideoRenderer extends MapRenderer {
                 if (mapPortion != null) {
                     canvas.drawImage(0, 0, mapPortion);
                 }
-                
-                needsUpdate = false;
             }
         }
         
