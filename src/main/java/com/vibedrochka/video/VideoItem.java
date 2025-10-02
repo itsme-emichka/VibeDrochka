@@ -8,6 +8,7 @@ import org.bukkit.entity.ItemFrame;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.hanging.HangingBreakEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.inventory.ItemStack;
@@ -162,19 +163,29 @@ public class VideoItem implements Listener {
     
     @EventHandler
     public void onFrameBreak(HangingBreakEvent event) {
+        plugin.getLogger().info("[VideoItem] Frame break detected: " + event.getEntity().getType());
+        
         if (!(event.getEntity() instanceof ItemFrame)) {
+            plugin.getLogger().info("[VideoItem] Not an ItemFrame, ignoring");
             return;
         }
         
         ItemFrame brokenFrame = (ItemFrame) event.getEntity();
         ItemStack item = brokenFrame.getItem();
         
+        plugin.getLogger().info("[VideoItem] ItemFrame broken with item: " + (item != null ? item.getType() : "null"));
+        
         // Check if this frame contains a video map
         if (isVideoItem(item)) {
+            plugin.getLogger().info("[VideoItem] Found video item in broken frame!");
             String videoName = getVideoNameFromItem(item);
             if (videoName != null) {
+                plugin.getLogger().info("[VideoItem] Video name: " + videoName);
+                
                 // Find and stop the video session
                 String sessionId = findSessionByFrame(brokenFrame);
+                plugin.getLogger().info("[VideoItem] Session ID: " + sessionId);
+                
                 if (sessionId != null) {
                     plugin.getVideoManager().stopVideoSession(sessionId);
                     plugin.getLogger().info("Stopped video session " + sessionId + " due to frame break");
@@ -182,9 +193,25 @@ public class VideoItem implements Listener {
                     // Drop the video item at the broken frame location
                     ItemStack videoItem = createItem();
                     brokenFrame.getWorld().dropItemNaturally(brokenFrame.getLocation(), videoItem);
+                    plugin.getLogger().info("[VideoItem] Dropped video item at broken frame location");
                     
                     event.setCancelled(false); // Allow the frame to break
+                } else {
+                    plugin.getLogger().warning("[VideoItem] Could not find session ID for broken frame");
                 }
+            } else {
+                plugin.getLogger().warning("[VideoItem] Could not get video name from item");
+            }
+        } else {
+            // Check if any active sessions contain this frame
+            for (String sessionId : plugin.getVideoManager().getActiveSessions().keySet()) {
+                plugin.getVideoManager().stopVideoSession(sessionId);
+                plugin.getLogger().info("[VideoItem] Stopped session " + sessionId + " due to potential frame break");
+                
+                // Drop a generic video item
+                ItemStack videoItem = createItem();
+                brokenFrame.getWorld().dropItemNaturally(brokenFrame.getLocation(), videoItem);
+                break;
             }
         }
     }
@@ -218,5 +245,37 @@ public class VideoItem implements Listener {
             }
         }
         return null;
+    }
+    
+    @EventHandler
+    public void onFrameDamage(EntityDamageByEntityEvent event) {
+        if (!(event.getEntity() instanceof ItemFrame)) {
+            return;
+        }
+        
+        ItemFrame frame = (ItemFrame) event.getEntity();
+        ItemStack item = frame.getItem();
+        
+        plugin.getLogger().info("[VideoItem] ItemFrame damaged with item: " + (item != null ? item.getType() : "null"));
+        
+        // Check if this is a video frame and handle breaking
+        if (item != null && item.getType() == Material.FILLED_MAP) {
+            plugin.getLogger().info("[VideoItem] Found map in damaged frame, checking for video session");
+            
+            // Stop all video sessions as a failsafe
+            boolean stoppedAny = false;
+            for (String sessionId : plugin.getVideoManager().getActiveSessions().keySet()) {
+                plugin.getVideoManager().stopVideoSession(sessionId);
+                plugin.getLogger().info("[VideoItem] Stopped session " + sessionId + " due to frame damage");
+                stoppedAny = true;
+            }
+            
+            if (stoppedAny) {
+                // Drop a video item
+                ItemStack videoItem = createItem();
+                frame.getWorld().dropItemNaturally(frame.getLocation(), videoItem);
+                plugin.getLogger().info("[VideoItem] Dropped video item due to frame damage");
+            }
+        }
     }
 }

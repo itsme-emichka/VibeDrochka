@@ -205,4 +205,8 @@ public class VideoManager {
     public VideoRenderer getRenderer() {
         return renderer;
     }
+    
+    public ConcurrentHashMap<String, VideoSession> getActiveSessions() {
+        return activeSessions;
+    }
 }
