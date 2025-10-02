@@ -8,6 +8,7 @@ import org.bukkit.entity.ItemFrame;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.hanging.HangingBreakEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -25,12 +26,14 @@ public class VideoItem implements Listener {
     private final VideoData videoData;
     private final List<BufferedImage> frames;
     private final NamespacedKey videoKey;
+    private final NamespacedKey sessionKey;
     
     public VideoItem(VibeDrochkaPlugin plugin, VideoData videoData, List<BufferedImage> frames) {
         this.plugin = plugin;
         this.videoData = videoData;
         this.frames = frames;
         this.videoKey = new NamespacedKey(plugin, "video_item");
+        this.sessionKey = new NamespacedKey(plugin, "video_session");
         
         // Register this as an event listener
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
@@ -120,6 +123,9 @@ public class VideoItem implements Listener {
         VideoSession session = new VideoSession(plugin, videoData, frames, frameGrid);
         plugin.getVideoManager().startVideoSession(sessionId, session);
         
+        // Mark all frames with session ID for cleanup detection
+        markFramesWithSession(frameGrid, sessionId);
+        
         // Start playback
         session.startPlayback();
         
@@ -152,5 +158,65 @@ public class VideoItem implements Listener {
         
         PersistentDataContainer pdc = meta.getPersistentDataContainer();
         return pdc.get(videoKey, PersistentDataType.STRING);
+    }
+    
+    @EventHandler
+    public void onFrameBreak(HangingBreakEvent event) {
+        if (!(event.getEntity() instanceof ItemFrame)) {
+            return;
+        }
+        
+        ItemFrame brokenFrame = (ItemFrame) event.getEntity();
+        ItemStack item = brokenFrame.getItem();
+        
+        // Check if this frame contains a video map
+        if (isVideoItem(item)) {
+            String videoName = getVideoNameFromItem(item);
+            if (videoName != null) {
+                // Find and stop the video session
+                String sessionId = findSessionByFrame(brokenFrame);
+                if (sessionId != null) {
+                    plugin.getVideoManager().stopVideoSession(sessionId);
+                    plugin.getLogger().info("Stopped video session " + sessionId + " due to frame break");
+                    
+                    // Drop the video item at the broken frame location
+                    ItemStack videoItem = createItem();
+                    brokenFrame.getWorld().dropItemNaturally(brokenFrame.getLocation(), videoItem);
+                    
+                    event.setCancelled(false); // Allow the frame to break
+                }
+            }
+        }
+    }
+    
+    private void markFramesWithSession(List<List<ItemFrame>> frameGrid, String sessionId) {
+        for (List<ItemFrame> row : frameGrid) {
+            for (ItemFrame frame : row) {
+                if (frame != null) {
+                    ItemStack item = frame.getItem();
+                    if (item != null && item.hasItemMeta()) {
+                        ItemMeta meta = item.getItemMeta();
+                        if (meta != null) {
+                            PersistentDataContainer pdc = meta.getPersistentDataContainer();
+                            pdc.set(sessionKey, PersistentDataType.STRING, sessionId);
+                            item.setItemMeta(meta);
+                            frame.setItem(item);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    private String findSessionByFrame(ItemFrame frame) {
+        ItemStack item = frame.getItem();
+        if (item != null && item.hasItemMeta()) {
+            ItemMeta meta = item.getItemMeta();
+            if (meta != null) {
+                PersistentDataContainer pdc = meta.getPersistentDataContainer();
+                return pdc.get(sessionKey, PersistentDataType.STRING);
+            }
+        }
+        return null;
     }
 }

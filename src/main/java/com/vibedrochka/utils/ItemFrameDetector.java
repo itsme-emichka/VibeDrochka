@@ -21,26 +21,26 @@ public class ItemFrameDetector {
         // Get the facing direction of the start frame
         BlockFace facing = startFrame.getFacing();
         
-        // For simplicity, let's assume the startFrame is the TOP-LEFT corner
-        // and build the grid going RIGHT and DOWN from there
+        // For grid detection, the clicked frame is the TOP-RIGHT corner
+        // We need to build the grid going LEFT and DOWN from there
         
         List<List<ItemFrame>> grid = new ArrayList<>();
         Location startLoc = startFrame.getLocation();
         
-        System.out.println("[FrameDetector] Building " + gridWidth + "x" + gridHeight + " grid starting from TOP-LEFT at " + 
+        System.out.println("[FrameDetector] Building " + gridWidth + "x" + gridHeight + " grid starting from TOP-RIGHT at " + 
                           startLoc.getBlockX() + "," + startLoc.getBlockY() + "," + startLoc.getBlockZ() + 
                           " facing " + facing);
         
         // Determine the direction vectors based on facing
-        int rightX = 0, rightZ = 0; // Direction to go "right" in the grid
+        int leftX = 0, leftZ = 0; // Direction to go "left" in the grid (opposite of right)
         
         switch (facing) {
-            case NORTH: rightX = 1; rightZ = 0; break;  // North wall: right = +X
-            case SOUTH: rightX = -1; rightZ = 0; break; // South wall: right = -X  
-            case EAST: rightX = 0; rightZ = 1; break;   // East wall: right = +Z
-            case WEST: rightX = 0; rightZ = -1; break;  // West wall: right = -Z
-            case UP: rightX = 1; rightZ = 0; break;     // Ceiling: right = +X
-            case DOWN: rightX = 1; rightZ = 0; break;   // Floor: right = +X
+            case NORTH: leftX = -1; leftZ = 0; break;  // North wall: left = -X
+            case SOUTH: leftX = 1; leftZ = 0; break;   // South wall: left = +X  
+            case EAST: leftX = 0; leftZ = -1; break;   // East wall: left = -Z
+            case WEST: leftX = 0; leftZ = 1; break;    // West wall: left = +Z
+            case UP: leftX = -1; leftZ = 0; break;     // Ceiling: left = -X
+            case DOWN: leftX = -1; leftZ = 0; break;   // Floor: left = -X
             default:
                 System.out.println("[FrameDetector] Unsupported facing: " + facing);
                 return null;
@@ -50,12 +50,12 @@ public class ItemFrameDetector {
         for (int row = 0; row < gridHeight; row++) {
             List<ItemFrame> gridRow = new ArrayList<>();
             
-            // Build each column in this row (left to right)
+            // Build each column in this row (right to left, so col=0 is rightmost)
             for (int col = 0; col < gridWidth; col++) {
-                // Calculate position: start + (col * right_direction) + (row * down_direction)
-                double x = startLoc.getX() + (col * rightX);
+                // Calculate position: start + (col * left_direction) + (row * down_direction)
+                double x = startLoc.getX() + (col * leftX);
                 double y = startLoc.getY() - row; // Go DOWN means -Y
-                double z = startLoc.getZ() + (col * rightZ);
+                double z = startLoc.getZ() + (col * leftZ);
                 
                 Location targetLoc = new Location(startLoc.getWorld(), x, y, z);
                 System.out.println("[FrameDetector] Looking for frame at grid[" + col + "," + row + "] = " + 
