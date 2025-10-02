@@ -58,14 +58,26 @@ public class VideoRenderer extends MapRenderer {
             if (currentFrame != null) {
                 // Calculate which part of the full image this map should display
                 int mapSize = 128; // Maps are 128x128 pixels
+                
+                // The gridX,gridY represent the column,row in the item frame grid
+                // We want to extract the corresponding portion from the source image
                 int sourceX = gridX * mapSize;
                 int sourceY = gridY * mapSize;
+                
+                // Debug output (only log occasionally to avoid spam)
+                if (System.currentTimeMillis() % 5000 < 50) { // Log every ~5 seconds
+                    plugin.getLogger().info("Rendering grid[col=" + gridX + ",row=" + gridY + "] from source (" + sourceX + "," + sourceY + ") of " + 
+                                           currentFrame.getWidth() + "x" + currentFrame.getHeight() + " image");
+                }
                 
                 // Extract the portion of the frame for this map position
                 BufferedImage mapPortion = extractMapPortion(currentFrame, sourceX, sourceY, mapSize, mapSize);
                 
                 if (mapPortion != null) {
                     canvas.drawImage(0, 0, mapPortion);
+                } else {
+                    // Fill with a test pattern if extraction fails
+                    canvas.setPixel(0, 0, (byte) (gridX * 50 + gridY * 10)); // Different colors for different positions
                 }
             }
         }

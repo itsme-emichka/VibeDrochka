@@ -21,43 +21,67 @@ public class ItemFrameDetector {
         // Get the facing direction of the start frame
         BlockFace facing = startFrame.getFacing();
         
-        // Determine the grid directions based on the frame's facing
-        GridDirections directions = getGridDirections(facing);
+        // For simplicity, let's assume the startFrame is the TOP-LEFT corner
+        // and build the grid going RIGHT and DOWN from there
         
-        if (directions == null) {
-            return null;
+        List<List<ItemFrame>> grid = new ArrayList<>();
+        Location startLoc = startFrame.getLocation();
+        
+        System.out.println("[FrameDetector] Building " + gridWidth + "x" + gridHeight + " grid starting from TOP-LEFT at " + 
+                          startLoc.getBlockX() + "," + startLoc.getBlockY() + "," + startLoc.getBlockZ() + 
+                          " facing " + facing);
+        
+        // Determine the direction vectors based on facing
+        int rightX = 0, rightZ = 0; // Direction to go "right" in the grid
+        
+        switch (facing) {
+            case NORTH: rightX = 1; rightZ = 0; break;  // North wall: right = +X
+            case SOUTH: rightX = -1; rightZ = 0; break; // South wall: right = -X  
+            case EAST: rightX = 0; rightZ = 1; break;   // East wall: right = +Z
+            case WEST: rightX = 0; rightZ = -1; break;  // West wall: right = -Z
+            case UP: rightX = 1; rightZ = 0; break;     // Ceiling: right = +X
+            case DOWN: rightX = 1; rightZ = 0; break;   // Floor: right = +X
+            default:
+                System.out.println("[FrameDetector] Unsupported facing: " + facing);
+                return null;
         }
         
-        // Build the grid
-        List<List<ItemFrame>> grid = new ArrayList<>();
-        
-        for (int y = 0; y < gridHeight; y++) {
-            List<ItemFrame> row = new ArrayList<>();
+        // Build grid row by row (top to bottom)
+        for (int row = 0; row < gridHeight; row++) {
+            List<ItemFrame> gridRow = new ArrayList<>();
             
-            for (int x = 0; x < gridWidth; x++) {
-                // Calculate the position for this grid cell
-                Location frameLocation = calculateFrameLocation(startFrame.getLocation(), directions, x, y);
+            // Build each column in this row (left to right)
+            for (int col = 0; col < gridWidth; col++) {
+                // Calculate position: start + (col * right_direction) + (row * down_direction)
+                double x = startLoc.getX() + (col * rightX);
+                double y = startLoc.getY() - row; // Go DOWN means -Y
+                double z = startLoc.getZ() + (col * rightZ);
                 
-                // Find the item frame at this location
-                ItemFrame frame = findItemFrameAt(frameLocation, facing);
+                Location targetLoc = new Location(startLoc.getWorld(), x, y, z);
+                System.out.println("[FrameDetector] Looking for frame at grid[" + col + "," + row + "] = " + 
+                                  targetLoc.getBlockX() + "," + targetLoc.getBlockY() + "," + targetLoc.getBlockZ());
+                
+                ItemFrame frame = findItemFrameAt(targetLoc, facing);
                 
                 if (frame == null) {
-                    // Missing frame, cannot create complete grid
+                    System.out.println("[FrameDetector] Missing frame at grid[" + col + "," + row + "]");
                     return null;
                 }
                 
-                // Check if frame is empty (no item)
                 if (frame.getItem().getType() != org.bukkit.Material.AIR) {
-                    // Frame is not empty, cannot use it
+                    System.out.println("[FrameDetector] Frame at grid[" + col + "," + row + "] is not empty");
                     return null;
                 }
                 
-                row.add(frame);
+                System.out.println("[FrameDetector] Found frame at grid[" + col + "," + row + "] at " + 
+                                  frame.getLocation().getBlockX() + "," + frame.getLocation().getBlockY() + "," + frame.getLocation().getBlockZ());
+                gridRow.add(frame);
             }
             
-            grid.add(row);
+            grid.add(gridRow);
         }
         
+        System.out.println("[FrameDetector] Successfully built " + grid.size() + "x" + grid.get(0).size() + " grid");
         return grid;
     }
     

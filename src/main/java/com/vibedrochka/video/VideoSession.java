@@ -40,10 +40,15 @@ public class VideoSession {
     }
     
     private void initializeMaps() {
+        plugin.getLogger().info("Initializing " + frameGrid.size() + " rows with " + frameGrid.get(0).size() + " columns");
+        
         for (int y = 0; y < frameGrid.size(); y++) {
             List<ItemFrame> row = frameGrid.get(y);
             for (int x = 0; x < row.size(); x++) {
                 ItemFrame frame = row.get(x);
+                
+                plugin.getLogger().info("Creating map for position [" + x + "," + y + "] at location " + 
+                                       frame.getLocation().getBlockX() + "," + frame.getLocation().getBlockY() + "," + frame.getLocation().getBlockZ());
                 
                 // Create a new map view
                 MapView mapView = Bukkit.createMap(frame.getWorld());
