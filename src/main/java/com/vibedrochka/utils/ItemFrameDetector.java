@@ -35,12 +35,12 @@ public class ItemFrameDetector {
         int rightX = 0, rightZ = 0; // Direction to go "right" in the grid
         
         switch (facing) {
-            case NORTH: rightX = 1; rightZ = 0; break;  // North wall: right = +X
-            case SOUTH: rightX = -1; rightZ = 0; break; // South wall: right = -X  
-            case EAST: rightX = 0; rightZ = 1; break;   // East wall: right = +Z
-            case WEST: rightX = 0; rightZ = -1; break;  // West wall: right = -Z
-            case UP: rightX = 1; rightZ = 0; break;     // Ceiling: right = +X
-            case DOWN: rightX = 1; rightZ = 0; break;   // Floor: right = +X
+            case NORTH: rightX = -1; rightZ = 0; break;  // North wall: right = -X (REVERSED)
+            case SOUTH: rightX = 1; rightZ = 0; break;   // South wall: right = +X  
+            case EAST: rightX = 0; rightZ = -1; break;   // East wall: right = -Z (REVERSED)
+            case WEST: rightX = 0; rightZ = 1; break;    // West wall: right = +Z
+            case UP: rightX = -1; rightZ = 0; break;     // Ceiling: right = -X (REVERSED)
+            case DOWN: rightX = -1; rightZ = 0; break;   // Floor: right = -X (REVERSED)
             default:
                 System.out.println("[FrameDetector] Unsupported facing: " + facing);
                 return null;
@@ -82,6 +82,16 @@ public class ItemFrameDetector {
         }
         
         System.out.println("[FrameDetector] Successfully built " + grid.size() + "x" + grid.get(0).size() + " grid");
+        
+        // Debug: Print the complete grid structure
+        for (int row = 0; row < grid.size(); row++) {
+            for (int col = 0; col < grid.get(row).size(); col++) {
+                ItemFrame frame = grid.get(row).get(col);
+                System.out.println("[FrameDetector] Final grid[" + col + "," + row + "] = " + 
+                                  frame.getLocation().getBlockX() + "," + frame.getLocation().getBlockY() + "," + frame.getLocation().getBlockZ());
+            }
+        }
+        
         return grid;
     }
     
